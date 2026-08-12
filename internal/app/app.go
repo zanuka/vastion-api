@@ -1,0 +1,69 @@
+package app
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"time"
+
+	"github.com/zanuka/com-scan-api/internal/config"
+	"github.com/zanuka/com-scan-api/internal/repository/mongodb"
+	"github.com/zanuka/com-scan-api/internal/router"
+	"github.com/zanuka/com-scan-api/internal/service"
+)
+
+type App struct {
+	server *http.Server
+	client *mongodb.Client
+}
+
+func New(cfg config.Config) (*App, error) {
+	client, err := mongodb.Connect(cfg.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	pingCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := client.Ping(pingCtx); err != nil {
+		slog.Warn("mongo ping", "err", err)
+	}
+
+	h := router.New(router.Deps{
+		Health:      service.NewHealth(client),
+		CORSOrigins: cfg.CORSOrigins,
+		Logger:      slog.Default(),
+	})
+
+	return &App{
+		server: &http.Server{
+			Addr:              ":" + cfg.Port,
+			Handler:           h,
+			ReadHeaderTimeout: 5 * time.Second,
+		},
+		client: client,
+	}, nil
+}
+
+func (a *App) Serve() error {
+	slog.Info("listen", "addr", a.server.Addr)
+	err := a.server.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+	return err
+}
+
+func (a *App) Close(ctx context.Context) error {
+	var serveErr error
+	if a.server != nil {
+		serveErr = a.server.Shutdown(ctx)
+	}
+	if a.client != nil {
+		if err := a.client.Disconnect(ctx); err != nil && serveErr == nil {
+			return err
+		}
+	}
+	return serveErr
+}
