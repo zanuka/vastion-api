@@ -2,7 +2,7 @@
 
 ![com-scan](images/comm-scan-api.jpg)
 
-Go API for **com-scan** — a civilian ops surface for situational awareness and human-in-the-loop triage.
+Go API for **com-scan** — a fictional bridge watchdesk that fuses ship and outpost sensors into a human-in-the-loop triage queue.
 
 ## Product vision
 
