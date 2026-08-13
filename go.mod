@@ -1,4 +1,4 @@
-module github.com/zanuka/com-scan-api
+module github.com/zanuka/vastion-api
 
 go 1.24.0
 

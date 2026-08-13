@@ -1,24 +1,24 @@
-# com-scan-api
+# vastion-api
 
-![com-scan](images/comm-scan-api.jpg)
+![vastion](images/vastion-api.jpg)
 
-Go API for **com-scan** — a fictional bridge watchdesk that fuses ship and outpost sensors into a human-in-the-loop triage queue.
+Go API for **Vastion** — a fictional station watchdesk that fuses ship and outpost sensors into a human-in-the-loop triage queue.
 
 ## Product vision
 
-In Star Wars lore, a **com-scan** integrated the ship’s many communication and sensor systems — electro-photo receptors, full-spectrum and subspace transceivers, dedicated energy receptors, and more — into one place where skilled officers (and sorting droids) evaluated the flood of readings and decided what was important enough to pass to command. Conditioned alerts could wake reserve sensors for a closer look: power fluctuations, energy spikes behind stealth, anything that matched a warning profile.
+A nod to how Star Wars bridges and space stations fused many sensor and communication feeds — electro-photo receptors, full-spectrum and subspace transceivers, dedicated energy receptors, and more — into one place where skilled officers (and sorting droids) evaluated the flood of readings and decided what was important enough to pass to command. Conditioned alerts could wake reserve sensors for a closer look: power fluctuations, energy spikes behind stealth, anything that matched a warning profile.
 
-This repo borrows that **shape** for a fictional fleet watchdesk that:
+**Vastion** borrows that **shape** for a fictional fleet watchdesk that:
 
 1. **Integrates** sites and sensors across ships and outposts into one coherent picture  
 2. **Collates and prioritizes** detections so bridge crews are not drowning in raw feeds  
 3. **Triages with humans in the loop** — acknowledge, reject, or override before anything escalates further  
 
-Same job as the bridge console: fuse sensors → surface what matters → let people decide. Domain focus: detection → triage → human judgment.
+Same job as the station console: fuse sensors → surface what matters → let people decide. Domain focus: detection → triage → human judgment.
 
 ## Product metaphor
 
-A **Com-Scan** for operators:
+A **Vastion** for operators:
 
 **sites → sensors → prioritized detections → acknowledge / override**
 
@@ -33,7 +33,7 @@ Status stays small: `open` → `acked` | `rejected`. Commands are idempotent; il
 
 ## This repo
 
-`com-scan-api` is the **server of record** and the contract other systems consume. The first client is [`com-scan-vue`](https://github.com/zanuka/com-scan-vue), but the API is not Vue-specific.
+`vastion-api` is the **server of record** and the contract other systems consume. The first client is [`vastion`](https://github.com/zanuka/vastion), but the API is not Vue-specific.
 
 Clients and services may include:
 

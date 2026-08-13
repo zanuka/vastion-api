@@ -1,6 +1,6 @@
-# com-scan-api
+# vastion-api
 
-Module: `github.com/zanuka/com-scan-api`
+Module: `github.com/zanuka/vastion-api`
 
 ## Layers
 

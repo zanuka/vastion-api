@@ -9,9 +9,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/zanuka/com-scan-api/internal/handler"
-	mw "github.com/zanuka/com-scan-api/internal/middleware"
-	"github.com/zanuka/com-scan-api/internal/service"
+	"github.com/zanuka/vastion-api/internal/handler"
+	mw "github.com/zanuka/vastion-api/internal/middleware"
+	"github.com/zanuka/vastion-api/internal/service"
 )
 
 type Deps struct {
@@ -34,7 +34,7 @@ func New(deps Deps) http.Handler {
 		MaxAge:           300,
 	}))
 
-	api := humachi.New(mux, huma.DefaultConfig("com-scan-api", "0.1.0"))
+	api := humachi.New(mux, huma.DefaultConfig("vastion-api", "0.1.0"))
 	handler.NewHealth(deps.Health).Register(api)
 	return mux
 }

@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zanuka/com-scan-api/internal/app"
-	"github.com/zanuka/com-scan-api/internal/config"
+	"github.com/zanuka/vastion-api/internal/app"
+	"github.com/zanuka/vastion-api/internal/config"
 )
 
 func main() {

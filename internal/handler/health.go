@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/zanuka/com-scan-api/internal/service"
+	"github.com/zanuka/vastion-api/internal/service"
 )
 
 type HealthOutput struct {
