@@ -30,6 +30,13 @@ func New(cfg config.Config) (*App, error) {
 		slog.Warn("mongo ping", "err", err)
 	}
 
+	idxCtx, idxCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer idxCancel()
+	if err := client.EnsureIndexes(idxCtx); err != nil {
+		_ = client.Disconnect(context.Background())
+		return nil, err
+	}
+
 	h := router.New(router.Deps{
 		Health:      service.NewHealth(client),
 		CORSOrigins: cfg.CORSOrigins,

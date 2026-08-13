@@ -9,7 +9,8 @@ const (
 )
 
 type Site struct {
-	ID   string
-	Name string
-	Code string
+	ID     string
+	Name   string
+	Code   string
+	Status SiteStatus
 }

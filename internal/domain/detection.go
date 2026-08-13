@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type DetectionStatus string
 
 const (
@@ -8,9 +10,28 @@ const (
 	DetectionStatusRejected DetectionStatus = "rejected"
 )
 
+type DetectionSeverity string
+
+const (
+	DetectionSeverityCritical DetectionSeverity = "critical"
+	DetectionSeverityHigh     DetectionSeverity = "high"
+	DetectionSeverityMedium   DetectionSeverity = "medium"
+	DetectionSeverityLow      DetectionSeverity = "low"
+)
+
 type Detection struct {
-	ID       string
+	ID         string
+	SiteID     string
+	SensorID   string
+	Status     DetectionStatus
+	Severity   DetectionSeverity
+	Summary    string
+	DetectedAt time.Time
+}
+
+type DetectionListFilter struct {
 	SiteID   string
 	SensorID string
 	Status   DetectionStatus
+	Severity DetectionSeverity
 }

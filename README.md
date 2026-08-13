@@ -59,14 +59,25 @@ Mongo in Docker (OrbStack or Docker Desktop):
 docker compose up -d
 ```
 
-Copy `.env.example` and run the API:
+Copy `.env.example` to `.env`. Then:
+
+```
+make compose-up
+make seed
+make run
+```
+
+Or without Make:
 
 ```
 export DATABASE_URL=mongodb://watchdesk:watchdesk@localhost:27017/watchdesk?authSource=admin
 export PORT=8080
 export CORS_ORIGINS=http://localhost:5173
+go run ./cmd/seed
 go run ./cmd/api
 ```
+
+`make seed` resets the four collections and inserts a demo queue (mixed severity and status, including acked and rejected rows).
 
 - `GET /healthz` — process is up
 - `GET /readyz` — Mongo ping
