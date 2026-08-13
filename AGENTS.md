@@ -14,16 +14,8 @@ Module: `github.com/zanuka/com-scan-api`
 
 ## Style
 
-No comments in Go. Why lives in `docs/`. Env + `.env.example`, not a config framework.
+No comments in Go. Prefer env + `.env.example` over a config framework.
 
 ## Stack
 
-Huma v2 + humachi + chi v5. mongo-driver/v2. slog + `request_id`. `DATABASE_URL`, `PORT`, `CORS_ORIGINS`. Auth stub headers `X-Operator-Role`, `X-Operator-Name`. No JWT. No GraphQL until Phase 4. No ack mutations in GraphQL.
-
-## Models
-
-Default: Composer 2.5. Escalate to Grok 4.6 for layering / domain vs Mongo vs HTTP. Codex for ack state machine, indexes, aggregation, dataloaders.
-
-## Docs
-
-Execution: `docs/dev/section-2-build-plan.md`. North star: `docs/dev/com-scan-plan.md`.
+Huma v2 + humachi + chi v5. mongo-driver/v2. slog + `request_id`. `DATABASE_URL`, `PORT`, `CORS_ORIGINS`. Auth stub headers `X-Operator-Role`, `X-Operator-Name`. No JWT. GraphQL (gqlgen) is planned later; ack/reject stay on REST.

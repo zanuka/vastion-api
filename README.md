@@ -8,13 +8,13 @@ Go API for **com-scan** — a fictional bridge watchdesk that fuses ship and out
 
 In Star Wars lore, a **com-scan** integrated the ship’s many communication and sensor systems — electro-photo receptors, full-spectrum and subspace transceivers, dedicated energy receptors, and more — into one place where skilled officers (and sorting droids) evaluated the flood of readings and decided what was important enough to pass to command. Conditioned alerts could wake reserve sensors for a closer look: power fluctuations, energy spikes behind stealth, anything that matched a warning profile.
 
-This repo borrows that **shape**, not the setting. Civilian **com-scan** is the watchdesk that:
+This repo borrows that **shape** for a fictional fleet watchdesk that:
 
-1. **Integrates** heterogeneous sites and sensors into one coherent picture  
-2. **Collates and prioritizes** detections so operators are not drowning in raw feeds  
+1. **Integrates** sites and sensors across ships and outposts into one coherent picture  
+2. **Collates and prioritizes** detections so bridge crews are not drowning in raw feeds  
 3. **Triages with humans in the loop** — acknowledge, reject, or override before anything escalates further  
 
-Same job as the bridge console: fuse sensors → surface what matters → let people decide. Not a DefenseTech clone; the workflow is the proof. Domain focus: awareness → triage → human judgment.
+Same job as the bridge console: fuse sensors → surface what matters → let people decide. Domain focus: detection → triage → human judgment.
 
 ## Product metaphor
 
@@ -75,3 +75,11 @@ go run ./cmd/api
 Env: `DATABASE_URL` (required), `PORT` (default `8080`), `CORS_ORIGINS` (comma-separated; default `http://localhost:5173`). Later, Fly can set the same `DATABASE_URL` with `fly secrets set`.
 
 Layering: `domain` → `repository/mongodb` → `service` → `handler`. GraphQL (gqlgen) is a later phase.
+
+## Author
+
+Created by [zanuka](https://github.com/zanuka) (Michael Delucchi)
+
+## License
+
+Copyright © 2026 Michael Delucchi. Released under the [MIT License](LICENSE).
