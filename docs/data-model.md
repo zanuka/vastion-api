@@ -23,7 +23,7 @@ Domain types use **string IDs**. `repository/mongodb` is the only layer that map
 
 ### Detection
 
-Current snapshot of a work item: `siteId`, `sensorId`, `status` (`open` → `acked` \| `rejected`), `severity` (`critical` \| `high` \| `medium` \| `low`), `summary`, `detectedAt`. Confidence, provenance, and `lastUpdated` are deferred to a later HITL pass.
+Current snapshot of a work item: `siteId`, `sensorId`, `status` (`open` → `acked` \| `rejected`), `severity` (`critical` \| `high` \| `medium` \| `low`), `summary`, `detectedAt`, plus Vue-facing snapshot fields `confidence`, `lastUpdated`, and `provenance` (sensor id/name and a model/version stub). Override audit remains a later HITL pass.
 
 ### Acknowledgement
 
@@ -47,7 +47,7 @@ Acks are an **unbounded** audit log: every ack, reject, and later override is an
 - Couple “update current status” with “append history” on the same document.
 - Make “show recent acks on detail” a projection problem instead of a keyed query.
 
-A separate `acknowledgements` collection keeps the detection document small and stable. The detection holds the **current** status; each acknowledgement is an immutable row (`fromStatus` → `toStatus`, operator, time). Detail views load recent acks with `detectionId` + `createdAt` descending. REST ack/reject still updates the detection’s status in a later phase; they do not append to an array on that document.
+A separate `acknowledgements` collection keeps the detection document small and stable. The detection holds the **current** status; each acknowledgement is an immutable row (`fromStatus` → `toStatus`, operator, time). Detail views load recent acks with `detectionId` + `createdAt` descending. REST ack/reject update that current status on the detection document; they do not append to an array on it.
 
 ## Indexes (ensured on startup, idempotent)
 
@@ -62,7 +62,7 @@ A separate `acknowledgements` collection keeps the detection document small and 
 
 The queue index is the one to defend: equality on `siteId` and `status`, sort on `detectedAt` newest first. That matches “open detections by site, newest first” without a collection scan. Aggregation rollups in a later phase reuse the same compound prefix (`status`, optional `siteId`).
 
-List pagination will use a **keyset** on `(detectedAt, id)`, not `skip`/`limit`. Cursor wiring lands with the REST list, not in this phase.
+List pagination uses a **keyset** on `(detectedAt, id)`, not `skip`/`limit`. The REST list encodes that pair as an opaque `cursor` query parameter.
 
 ## Non-goals here
 

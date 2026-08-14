@@ -2,7 +2,7 @@
 
 Decisions that shape `vastion-api`. Each record is **Accepted** unless noted. Update this file when a decision changes or a new one lands.
 
-**Status of the codebase:** Phase 1 — domain entities, repository interfaces, Mongo collections and indexes, seed data. REST detections CRUD is Phase 2. GraphQL is later.
+**Status of the codebase:** Phase 2 — REST vertical slice (`/api/v1` detections list/detail/ack/reject and sites list). GraphQL is later.
 
 ---
 
@@ -170,7 +170,7 @@ type Detection struct {
 }
 ```
 
-Ack/reject (when implemented): idempotent success returns **200** with the same body; illegal transitions return **409**.
+Ack/reject: idempotent success returns **200** with the same body; illegal transitions return **409**.
 
 **Consequences:**
 
@@ -213,7 +213,7 @@ Ack/reject mutations are **not** exposed on GraphQL in v1. Both surfaces call `s
 - `X-Operator-Role: analyst | supervisor`
 - `X-Operator-Name: …`
 
-CORS already allows these headers. Constants live in `internal/authz`. Enforcement on write paths comes in a later phase. UI may hide controls; the API remains authoritative.
+CORS already allows these headers. Constants live in `internal/authz`. Phase 2 requires a valid role on `/api/v1` routes (missing → 401, unknown → 403). Analyst vs supervisor capability splits (override) come in a later phase. UI may hide controls; the API remains authoritative.
 
 **Consequences:**
 
@@ -312,8 +312,8 @@ List pagination will use **keyset** cursors on `(detectedAt, id)`, not `skip`/`l
 | `internal/domain` | Entities + repository interfaces |
 | `internal/repository/mongodb` | Driver, BSON mapping, indexes, CRUD |
 | `docs/data-model.md` | Embed vs reference; ack collection; indexes |
-| `internal/service` | Use cases (health today) |
-| `internal/handler` | Huma REST |
+| `internal/service` | Use cases (health, detections list/ack/reject, sites list) |
+| `internal/handler` | Huma REST (`/healthz`, `/readyz`, `/api/v1`) |
 | `internal/middleware` | Request logging |
 | `internal/authz` | Role/header constants |
 | `internal/router` | chi + CORS + Huma registration |

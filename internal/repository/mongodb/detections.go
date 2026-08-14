@@ -20,25 +20,52 @@ func NewDetectionRepository(c *Client) *DetectionRepository {
 	return &DetectionRepository{coll: c.db.Collection(collectionDetections)}
 }
 
+type provenanceDoc struct {
+	SensorID     string `bson:"sensorId"`
+	SensorName   string `bson:"sensorName,omitempty"`
+	Model        string `bson:"model,omitempty"`
+	ModelVersion string `bson:"modelVersion,omitempty"`
+}
+
 type detectionDoc struct {
-	ID         bson.ObjectID `bson:"_id"`
-	SiteID     bson.ObjectID `bson:"siteId"`
-	SensorID   bson.ObjectID `bson:"sensorId"`
-	Status     string        `bson:"status"`
-	Severity   string        `bson:"severity"`
-	Summary    string        `bson:"summary"`
-	DetectedAt time.Time     `bson:"detectedAt"`
+	ID          bson.ObjectID `bson:"_id"`
+	SiteID      bson.ObjectID `bson:"siteId"`
+	SensorID    bson.ObjectID `bson:"sensorId"`
+	Status      string        `bson:"status"`
+	Severity    string        `bson:"severity"`
+	Confidence  float64       `bson:"confidence"`
+	Summary     string        `bson:"summary"`
+	DetectedAt  time.Time     `bson:"detectedAt"`
+	LastUpdated time.Time     `bson:"lastUpdated"`
+	Provenance  provenanceDoc `bson:"provenance"`
 }
 
 func (d detectionDoc) toDomain() domain.Detection {
+	detectedAt := d.DetectedAt.UTC()
+	lastUpdated := d.LastUpdated.UTC()
+	if lastUpdated.IsZero() {
+		lastUpdated = detectedAt
+	}
+	prov := domain.Provenance{
+		SensorID:     d.Provenance.SensorID,
+		SensorName:   d.Provenance.SensorName,
+		Model:        d.Provenance.Model,
+		ModelVersion: d.Provenance.ModelVersion,
+	}
+	if prov.SensorID == "" {
+		prov.SensorID = d.SensorID.Hex()
+	}
 	return domain.Detection{
-		ID:         d.ID.Hex(),
-		SiteID:     d.SiteID.Hex(),
-		SensorID:   d.SensorID.Hex(),
-		Status:     domain.DetectionStatus(d.Status),
-		Severity:   domain.DetectionSeverity(d.Severity),
-		Summary:    d.Summary,
-		DetectedAt: d.DetectedAt.UTC(),
+		ID:          d.ID.Hex(),
+		SiteID:      d.SiteID.Hex(),
+		SensorID:    d.SensorID.Hex(),
+		Status:      domain.DetectionStatus(d.Status),
+		Severity:    domain.DetectionSeverity(d.Severity),
+		Confidence:  d.Confidence,
+		Summary:     d.Summary,
+		DetectedAt:  detectedAt,
+		LastUpdated: lastUpdated,
+		Provenance:  prov,
 	}
 }
 
@@ -59,20 +86,40 @@ func (r *DetectionRepository) Insert(ctx context.Context, detection *domain.Dete
 	if status == "" {
 		status = domain.DetectionStatusOpen
 	}
+	detectedAt := detection.DetectedAt.UTC()
+	lastUpdated := detection.LastUpdated.UTC()
+	if lastUpdated.IsZero() {
+		lastUpdated = detectedAt
+	}
+	prov := detection.Provenance
+	if prov.SensorID == "" {
+		prov.SensorID = sensorID.Hex()
+	}
 	doc := detectionDoc{
-		ID:         id,
-		SiteID:     siteID,
-		SensorID:   sensorID,
-		Status:     string(status),
-		Severity:   string(detection.Severity),
-		Summary:    detection.Summary,
-		DetectedAt: detection.DetectedAt.UTC(),
+		ID:          id,
+		SiteID:      siteID,
+		SensorID:    sensorID,
+		Status:      string(status),
+		Severity:    string(detection.Severity),
+		Confidence:  detection.Confidence,
+		Summary:     detection.Summary,
+		DetectedAt:  detectedAt,
+		LastUpdated: lastUpdated,
+		Provenance: provenanceDoc{
+			SensorID:     prov.SensorID,
+			SensorName:   prov.SensorName,
+			Model:        prov.Model,
+			ModelVersion: prov.ModelVersion,
+		},
 	}
 	if _, err := r.coll.InsertOne(ctx, doc); err != nil {
 		return err
 	}
 	detection.ID = id.Hex()
 	detection.Status = status
+	detection.DetectedAt = detectedAt
+	detection.LastUpdated = lastUpdated
+	detection.Provenance = prov
 	return nil
 }
 
@@ -98,6 +145,9 @@ func (r *DetectionRepository) List(ctx context.Context, filter domain.DetectionL
 		{Key: "detectedAt", Value: -1},
 		{Key: "_id", Value: -1},
 	})
+	if filter.Limit > 0 {
+		opts.SetLimit(int64(filter.Limit + 1))
+	}
 	cur, err := r.coll.Find(ctx, q, opts)
 	if err != nil {
 		return nil, err
@@ -113,6 +163,36 @@ func (r *DetectionRepository) List(ctx context.Context, filter domain.DetectionL
 		out = append(out, doc.toDomain())
 	}
 	return out, nil
+}
+
+func (r *DetectionRepository) UpdateStatus(ctx context.Context, id string, from, to domain.DetectionStatus, at time.Time) (*domain.Detection, error) {
+	oid, err := parseObjectID(id)
+	if err != nil {
+		return nil, err
+	}
+	if at.IsZero() {
+		at = time.Now().UTC()
+	} else {
+		at = at.UTC()
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var doc detectionDoc
+	err = r.coll.FindOneAndUpdate(ctx,
+		bson.D{
+			{Key: "_id", Value: oid},
+			{Key: "status", Value: string(from)},
+		},
+		bson.D{{Key: "$set", Value: bson.D{
+			{Key: "status", Value: string(to)},
+			{Key: "lastUpdated", Value: at},
+		}}},
+		opts,
+	).Decode(&doc)
+	if err != nil {
+		return nil, mapFindErr(err)
+	}
+	detection := doc.toDomain()
+	return &detection, nil
 }
 
 func detectionQuery(filter domain.DetectionListFilter) (bson.D, error) {
@@ -136,6 +216,19 @@ func detectionQuery(filter domain.DetectionListFilter) (bson.D, error) {
 	}
 	if filter.Severity != "" {
 		q = append(q, bson.E{Key: "severity", Value: string(filter.Severity)})
+	}
+	if filter.Cursor != nil {
+		oid, err := parseObjectID(filter.Cursor.ID)
+		if err != nil {
+			return nil, err
+		}
+		q = append(q, bson.E{Key: "$or", Value: bson.A{
+			bson.D{{Key: "detectedAt", Value: bson.D{{Key: "$lt", Value: filter.Cursor.DetectedAt}}}},
+			bson.D{
+				{Key: "detectedAt", Value: filter.Cursor.DetectedAt},
+				{Key: "_id", Value: bson.D{{Key: "$lt", Value: oid}}},
+			},
+		}})
 	}
 	return q, nil
 }

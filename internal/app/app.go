@@ -39,6 +39,8 @@ func New(cfg config.Config) (*App, error) {
 
 	h := router.New(router.Deps{
 		Health:      service.NewHealth(client),
+		Detections:  service.NewDetections(mongodb.NewDetectionRepository(client), mongodb.NewAcknowledgementRepository(client)),
+		Sites:       service.NewSites(mongodb.NewSiteRepository(client)),
 		CORSOrigins: cfg.CORSOrigins,
 		Logger:      slog.Default(),
 	})

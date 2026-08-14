@@ -1,4 +1,4 @@
-.PHONY: run build test compose-up lint check seed hooks
+.PHONY: run build test test-integration compose-up lint check seed hooks
 
 -include .env
 export
@@ -17,6 +17,9 @@ build:
 
 test:
 	go test ./...
+
+test-integration:
+	go test -tags=integration ./...
 
 compose-up:
 	docker compose up -d
