@@ -3,6 +3,12 @@
 -include .env
 export
 
+HOOKS_DIR := $(shell git rev-parse --git-path hooks 2>/dev/null)
+
+ifneq ($(HOOKS_DIR),)
+$(shell ln -sfn "$(CURDIR)/.githooks/pre-push" "$(HOOKS_DIR)/pre-push")
+endif
+
 run:
 	go run ./cmd/api
 
@@ -24,4 +30,4 @@ seed:
 	go run ./cmd/seed
 
 hooks:
-	git config core.hooksPath .githooks
+	ln -sfn "$(CURDIR)/.githooks/pre-push" "$(HOOKS_DIR)/pre-push"

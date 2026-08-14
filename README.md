@@ -133,17 +133,17 @@ Layering: `domain` → `repository/mongodb` → `service` → `handler`. GraphQL
 | `make test` | Run `go test ./...` |
 | `make lint` | Run `golangci-lint run` |
 | `make check` | Build, test, and lint (same gates as CI and the pre-push hook) |
-| `make hooks` | Point this clone at `.githooks/` |
+| `make hooks` | Install `.git/hooks/pre-push` (also happens on any `make` target) |
 
 ### Git hooks
 
-Once per clone, enable the repo hooks:
+Git only runs scripts in `.git/hooks/` (that directory is not committed). Any `make` target installs a symlink from `.git/hooks/pre-push` to `.githooks/pre-push`. To install without running another target:
 
 ```
 make hooks
 ```
 
-`git push` then runs `make check` so the branch compiles, tests pass, and lint is clean before anything reaches the remote. A failing check aborts the push. Skip only in an emergency with `git push --no-verify`.
+After that, `git push` runs `make check` so the branch compiles, tests pass, and lint is clean before anything reaches the remote. A failing check aborts the push. Skip only in an emergency with `git push --no-verify`.
 
 ## Author
 
