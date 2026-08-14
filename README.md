@@ -2,15 +2,15 @@
 
 ![baluardo](images/baluardo-api.jpg)
 
-Go API for **Baluardo** (Italian for *bulwark*) — a hosted watchdesk game. You are the duty officer. Sites and sensors across a delayed fleet feed an imperfect picture; operators triage detections and push decisions back to the edge. Latency, confidence, and the cost of being wrong are the gameplay.
+Go API for **Baluardo** (Italian for *bulwark*) — a hosted watchdesk game. You are the duty officer on a multi-leg **Quest**: sites and sensors across a delayed fleet feed an imperfect picture while you keep the spacecraft alive long enough to reach the next docking station. Operators triage detections, type commands, and push decisions back to the edge. Latency, confidence, dwindling supplies, and the cost of being wrong are the gameplay.
 
-The Vue client lives in the sibling [`vastion`](https://github.com/zanuka/vastion) repo.
+The Vue client lives in the sibling [`baluardo`](https://github.com/zanuka/baluardo) repo. Vue is a projection and input surface. This API owns session state, supply ticks, latency simulation, feed generation, and debrief scoring. Vue never talks to Mongo.
 
 ## Product vision
 
-Most command games hide uncertainty. Baluardo makes it the gameplay.
+Most command games hide uncertainty. Baluardo makes it the gameplay. The longer container is a **Quest** — an Oregon Trail–style interplanetary journey. While the operator triages detections under light-minute delay, the craft also burns propellant, O₂, rations, and spare parts, and knowledge about galaxies, systems, and planets unlocks because they arrived.
 
-You issue an Ack. The edge unit only receives it after a delay that stands in for light-minutes. In the meantime the Detection can shift confidence, move, or vanish. At the end of a scenario, a debrief shows what was real versus what you decided.
+You issue an Ack. The edge unit only receives it after a delay that stands in for light-minutes. In the meantime the Detection can shift confidence, move, or vanish — and the craft may already have moved. At each Waypoint the player restocks, optionally plays a short mini-game, and unlocks lore. A Quest ends with a debrief: truth vs decisions, delay and resource cost, knowledge discovered, final score.
 
 This API is the **server of record** for that loop:
 
@@ -18,29 +18,36 @@ This API is the **server of record** for that loop:
 2. **Collates and prioritizes** detections so the watch is not a raw feed
 3. **Triages with a human in the loop** — acknowledge, reject, or override before anything reaches the edge
 4. **Simulates latency** — commands travel; the world can change while they are in flight
-5. **Withholds ground truth** until debrief — scoring lives here, not in the client
+5. **Ticks survival** — SupplyState lives here; journey actions that would leave the craft dead fail clearly
+6. **Withholds ground truth** until debrief — scoring (judgment + survival + knowledge) lives here, not in the client
 
-**First playable fantasy:** single-player scenario runner. Co-op shared picture comes after that loop is fun.
+**First playable fantasy:** a 4–5 Waypoint Quest that can be finished in 15–25 minutes. Outfit at origin, travel and triage under delay, restock once, one Signal Intercept mini-game, one knowledge discovery, then reach the final station or fail with a readable debrief. A short single-watch **Scenario** remains as training mode. Co-op shared picture comes after that loop is fun.
 
 ## Product metaphor
 
-**sites → sensors → live detections → acknowledge / reject / override → delayed edge receipt → debrief**
+**quest → outfit → watchdesk (detections + command console) → waypoint (restock / mini-game / knowledge / triage) → delayed edge receipt → next leg → debrief**
 
 | Entity | Role |
 | --- | --- |
-| **Site** | Location / area of operations, with a latency profile |
+| **Site** | Location / AO (sector, station, docking waypoint), with a latency profile |
 | **Sensor** | Source of detections; coverage and reliability |
 | **Detection** | Primary work item (severity, confidence, status, freshness). Truth is hidden until debrief. |
 | **Ack** | Player command: acknowledge, reject / false-positive, override |
-| **Scenario** | Layout, threat mix, duration, and latency profile for one watch |
-| **Session** | A running (or completed) play of a scenario |
-| **Debrief** | After-action: what was real, what you decided, what the delay cost |
+| **Quest** | Campaign definition: Waypoint sequence, starting loadout, educational themes, win/lose conditions |
+| **Waypoint** | Landmark on the journey — local sensors, restock, lore, optional mini-game |
+| **SupplyState** | Authoritative resource bag for the session (propellant, O₂, rations, parts, crew). Tick rules live here |
+| **Command** | Console input, parsed into Ack, journey action, query, or mini-game trigger |
+| **MiniGameResult** | Outcome reported by Vue; this API applies the resource delta and records it for debrief |
+| **KnowledgeNode** | Facts / lore about a galaxy, system, or planet (seeded here or served via instruments) |
+| **Scenario** | Layout, threat mix, duration, and latency for one short watch (training mode) |
+| **Session** | A running (or completed) play of a Quest or Scenario |
+| **Debrief** | After-action: truth vs decisions, delay cost, resource trajectory, knowledge discovered |
 
-Status stays small: `open` → `acked` | `rejected`. Commands are idempotent; illegal transitions fail clearly (expect 409). That constraint is a game rule.
+Status stays small: `open` → `acked` | `rejected`. Commands are idempotent; illegal transitions fail clearly (expect 409). Journey actions that would leave the craft dead fail the same way. That constraint is a game rule.
 
 ## This repo
 
-Module: `github.com/zanuka/baluardo-api`. This service owns persistence and the contracts other systems consume. The first client is [`vastion`](https://github.com/zanuka/baluardo), but the API is not Vue-specific.
+Module: `github.com/zanuka/baluardo-api`. This service owns persistence and the contracts other systems consume. The first client is [`baluardo`](https://github.com/zanuka/baluardo), but the API is not Vue-specific.
 
 Clients and services may include:
 
@@ -48,22 +55,58 @@ Clients and services may include:
 - Automation / workers that list, filter, or act on detections
 - Integrations that read the graph or issue command-style mutations over HTTP
 
-Contracts are the source of truth — **OpenAPI (Huma REST)** for commands (ack, reject, start/end session), a **WebSocket observation plane** for the live watch (G1 may poll REST as a bridge), and **GraphQL (gqlgen)** later for the read graph (scenario layout, nested debrief, filters, rollups). Vue never talks to Mongo; only this API does. Vue never authors detections; the feed generator lives here.
+Contracts are the source of truth — **OpenAPI (Huma REST)** for commands (ack, reject, start Quest / session, journey actions, mini-game results), a **WebSocket observation plane** for the live watch (G1 may poll REST as a bridge), and **GraphQL (gqlgen)** later for the read graph (quest layout, nested debrief, filters, rollups). Vue never talks to Mongo; only this API does. Vue never authors detections or supply ticks; the feed generator and resource clock live here.
 
 ## North star
 
-Ship a playable watch early: start a scenario → live detections → ack / reject under delay → debrief that shows truth vs decisions. Then layer the event stream, co-op rooms, content, and hosting.
+Ship a playable Quest early: start a campaign → outfit → live detections + command console → ack / reject and ADVANCE under delay → restock / mini-game at a Waypoint → debrief that shows truth vs decisions and the resource trajectory. Keep the existing detection/ack path working the whole time. Then layer the event stream, knowledge instruments, co-op rooms, content, and hosting.
 
 ```
 Client need → contract (REST command, WS event, or GraphQL read)
            → Go handler / stream / resolver → Mongo → typed client → UI / service states
 ```
 
-Every surface should answer: *why this tool, what the player can know now, what is still in flight to the edge.*
+Every surface should answer: *why this tool, what the player can know now, what is still in flight to the edge, and what the craft still has left.*
+
+## Quest gameplay: API and Mongo
+
+The watchdesk loop (sites, sensors, detections, ack/reject, delayed receipt) does not change. The Quest is a longer container around that loop. Domain types stay in `internal/domain` with string IDs; only `repository/mongodb` maps them to ObjectIDs. Contracts stay a phase ahead of the Vue screens that consume them.
+
+### What this API owns
+
+| Concern | Rule |
+| --- | --- |
+| **SupplyState** | Authoritative bag on the Session. Vue displays it; it never writes it. Tick, restock, ration, and mini-game deltas are applied in `service`. |
+| **Journey commands** | REST mutations (`ADVANCE`, `DOCK`, `REST`, `RATION`, …). Illegal state — including an ADVANCE that would leave the craft dead — returns a clear 4xx, same spirit as ack **409**. |
+| **Mini-games** | Vue owns the interaction. It POSTs a `MiniGameResult`; this API applies the resource delta and records the outcome for debrief. |
+| **Latency** | Commands that affect edge state still travel the delayed receipt path. `STATUS`, `SUPPLIES`, and knowledge queries can be immediate. |
+| **Knowledge** | Seeded `KnowledgeNode` documents (and later instrument tools) are read-only flavor. They do not mutate game state. |
+| **Debrief** | Written here: truth vs decisions, delay cost, supply trajectory, knowledge discovered, score. Ground truth never appears on mid-session list, detail, or stream payloads. |
+
+Ack/reject stay on REST and remain idempotent. A Quest Session still surfaces live detections; the existing status machine is the atomic unit. Instruments (command parsing, lore lookup) may sit beside this service later; they are not a second source of truth. Game mutations still go through this API.
+
+### How Mongo should hold it
+
+Follow the same embed-vs-reference rules as the watchdesk collections (see [`docs/data-model.md`](docs/data-model.md)): **bounded current state on the parent document, unbounded history in its own collection, independent lifecycles referenced by id.**
+
+| Collection (direction) | Pattern | Why |
+| --- | --- | --- |
+| `quests` | Definition document: ordered Waypoints, starting loadout, themes, win/lose. Referenced by sessions. | A Quest template outlives many plays, the way a Site outlives detections. The Waypoint list is small and bounded (4–6 for the first playable), so it embeds on the Quest rather than becoming a hot collection of its own. |
+| `sessions` | Running play: `questId`, current Waypoint index, **embedded SupplyState**, status (`running` \| `completed` \| `failed`). | Current bag and current leg are one snapshot — same reason current detection `status` lives on the detection, not in the ack log. One document update applies a tick or restock without a multi-document transaction. |
+| `commands` | Immutable row per console verb (operator, raw text, parsed action, result, time). | Unbounded audit, like `acknowledgements`. Do not append an array onto the session. |
+| `minigame_results` | Immutable row: session, waypoint, game kind, accuracy/outcome, applied delta. | Vue reports; API records. Debrief reads this log. |
+| `knowledge_nodes` | Seeded facts keyed by system / planet / topic. Waypoints reference them. | Content lifecycle is independent of a running watch. |
+| Existing four | `sites`, `sensors`, `detections`, `acknowledgements` unchanged. | Docking stations can be Sites (or Waypoints that reference a Site). Detections stay the queue; a Quest Session filters them like today’s site switcher. |
+
+**Tick on command, not on the client clock.** `ADVANCE` (and rest / ration) is the moment `service` subtracts consumables, checks win/lose, and optionally injects a journey event or new Detection. That keeps the resource clock authoritative even if the SPA is paused or reconnecting.
+
+**Two writes, same as ack.** Update the session’s current SupplyState, then insert a command or mini-game row. Do not grow the session document with history arrays. Mongo JSON Schema validation, Redis, change streams, and multi-doc transactions stay out of scope unless an ADR says otherwise.
+
+Seed the first playable as a handful of Quest + KnowledgeNode documents next to the existing demo queue. Indexes to defend later: `sessions` by operator + status, `commands` / `minigame_results` by `sessionId` + time descending — the same shape as acknowledgements by `detectionId`.
 
 ## Why this stack
 
-Baluardo is deliberately the same shape as a real watchdesk, at a smaller scale: sites and sensors feed a shared picture; operators triage detections with a clear status machine; the Vue client never talks to Mongo; this Go API owns the contracts, the persistence, and the delayed edge.
+Baluardo is deliberately the same shape as a real watchdesk, at a smaller scale: sites and sensors feed a shared picture; operators triage detections with a clear status machine; a Quest session carries an authoritative supply bag; the Vue client never talks to Mongo; this Go API owns the contracts, the persistence, and the delayed edge.
 
 ### Why Go
 
@@ -88,7 +131,7 @@ Relational systems force rigid tables or endless JSON columns when the shape of 
 
 ### Why Vue 3
 
-Operators need a reactive, low-friction SPA for triage: a shared picture of sites, sensors, and detections; a canvas situation map; ack / reject / override actions that must be idempotent and survive delayed links. Vue 3 + Composition API is a strong fit for that UX surface. The client lives in [`vastion`](https://github.com/zanuka/vastion); this API stays client-agnostic.
+Operators need a reactive, low-friction SPA for triage: a shared picture of sites, sensors, and detections; a canvas situation map; ack / reject / override actions that must be idempotent and survive delayed links. Vue 3 + Composition API is a strong fit for that UX surface. The client lives in [`baluardo`](https://github.com/zanuka/baluardo); this API stays client-agnostic.
 
 ### Mapping back to the vision
 
