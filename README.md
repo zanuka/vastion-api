@@ -122,20 +122,20 @@ A watchdesk or perception node must ingest concurrent sensor streams, run infere
 
 Sensor and detection data is heterogeneous and mission-shaped, not relational-table-shaped.
 
-- **Flexible document model.** A Detection can carry severity, confidence, a status machine (`open` → `acked` | `rejected`), nested history of operator overrides, model provenance, geospatial context, and arbitrary sensor-specific payloads without constant schema migrations.
-- **Write-heavy, append-friendly workloads.** Sites and sensors continuously emit detections; operators triage them. Mongo handles high ingest rates and secondary indexes on the fields that matter for the shared picture (status, severity, site, time, confidence).
-- **Scenarios and sessions.** Scenario definitions, running watches, and debrief snapshots sit next to the queue without a second store.
+- **Flexible document model.** A Detection can carry severity, confidence, a status machine (`open` → `acked` | `rejected`), nested history of operator overrides, model provenance, geospatial context, and arbitrary sensor-specific payloads without constant schema migrations. A Quest definition and a Session’s SupplyState are the same idea: mission-shaped documents, not rigid tables.
+- **Write-heavy, append-friendly workloads.** Sites and sensors continuously emit detections; operators triage them; journey commands and mini-game results append as audit rows. Mongo handles high ingest rates and secondary indexes on the fields that matter for the shared picture (status, severity, site, time, confidence) and for a running Quest (session, waypoint, time).
+- **Quests, sessions, and debrief.** Campaign definitions, a running supply bag, command logs, and debrief snapshots sit next to the detection queue without a second store.
 - **Natural fit with Go.** The official driver and BSON are straightforward. API contracts stay the source of truth while the storage layer remains flexible.
 
 Relational systems force rigid tables or endless JSON columns when the shape of a Detection or an Ack changes with the mission. Mongo lets the domain model stay honest.
 
 ### Why Vue 3
 
-Operators need a reactive, low-friction SPA for triage: a shared picture of sites, sensors, and detections; a canvas situation map; ack / reject / override actions that must be idempotent and survive delayed links. Vue 3 + Composition API is a strong fit for that UX surface. The client lives in [`baluardo`](https://github.com/zanuka/baluardo); this API stays client-agnostic.
+Operators need a reactive, low-friction SPA for triage: a shared picture of sites, sensors, and detections; a canvas situation map; a command console; ack / reject / override and journey actions that must be idempotent and survive delayed links. Vue 3 + Composition API is a strong fit for that UX surface. The client lives in [`baluardo`](https://github.com/zanuka/baluardo); this API stays client-agnostic.
 
 ### Mapping back to the vision
 
-Baluardo is the same loop at a smaller scale. Working through the two-repo boundary, Huma/gqlgen, the status machine (including proper 409s on illegal transitions), and delayed edge receipts is the work real perception-and-command platforms do — fuse sensors, surface what matters, let people decide when the link is contested.
+Baluardo is the same loop at a smaller scale. Working through the two-repo boundary, Huma/gqlgen, the status machine (including proper 409s on illegal transitions), delayed edge receipts, and an authoritative supply bag is the work real perception-and-command platforms do — fuse sensors, surface what matters, let people decide when the link is contested, and keep the craft alive long enough to use the decision.
 
 ## Local development
 
@@ -180,7 +180,7 @@ Send stub identity headers on `/api/v1` routes: `X-Operator-Role: analyst|superv
 
 Env: `DATABASE_URL` (required), `PORT` (default `8080`), `CORS_ORIGINS` (comma-separated; default `http://localhost:5173`). Later, Fly can set the same `DATABASE_URL` with `fly secrets set`.
 
-Layering: `domain` → `repository/mongodb` → `service` → `handler`. GraphQL (gqlgen) is a later phase. Scenario, session, debrief, and the observation stream land on the game track before the Vue screens that consume them.
+Layering: `domain` → `repository/mongodb` → `service` → `handler`. GraphQL (gqlgen) is a later phase. Quest, session supply, command, mini-game, debrief, and the observation stream land on the game track before the Vue screens that consume them. The detection/ack path stays live in the meantime.
 
 ### Make targets
 
