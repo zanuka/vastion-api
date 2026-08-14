@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zanuka/vastion-api/internal/config"
-	"github.com/zanuka/vastion-api/internal/repository/mongodb"
-	"github.com/zanuka/vastion-api/internal/router"
-	"github.com/zanuka/vastion-api/internal/service"
+	"github.com/zanuka/baluardo-api/internal/config"
+	"github.com/zanuka/baluardo-api/internal/repository/mongodb"
+	"github.com/zanuka/baluardo-api/internal/router"
+	"github.com/zanuka/baluardo-api/internal/service"
 )
 
 type App struct {

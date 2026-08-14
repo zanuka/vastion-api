@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zanuka/vastion-api/internal/domain"
-	"github.com/zanuka/vastion-api/internal/fakes"
-	"github.com/zanuka/vastion-api/internal/router"
-	"github.com/zanuka/vastion-api/internal/service"
+	"github.com/zanuka/baluardo-api/internal/domain"
+	"github.com/zanuka/baluardo-api/internal/fakes"
+	"github.com/zanuka/baluardo-api/internal/router"
+	"github.com/zanuka/baluardo-api/internal/service"
 )
 
 func restHandler() http.Handler {

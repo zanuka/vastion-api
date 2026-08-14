@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zanuka/vastion-api/internal/domain"
-	"github.com/zanuka/vastion-api/internal/fakes"
+	"github.com/zanuka/baluardo-api/internal/domain"
+	"github.com/zanuka/baluardo-api/internal/fakes"
 )
 
 func TestAckIdempotentAndConflict(t *testing.T) {

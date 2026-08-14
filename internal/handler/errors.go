@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/zanuka/vastion-api/internal/authz"
-	"github.com/zanuka/vastion-api/internal/domain"
+	"github.com/zanuka/baluardo-api/internal/authz"
+	"github.com/zanuka/baluardo-api/internal/domain"
 )
 
 func mapError(err error) error {

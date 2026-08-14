@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zanuka/vastion-api/internal/domain"
+	"github.com/zanuka/baluardo-api/internal/domain"
 )
 
 var (

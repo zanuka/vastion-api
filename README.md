@@ -1,59 +1,69 @@
-# vastion-api
+# baluardo-api
 
-![vastion](images/vastion-api.jpg)
+![baluardo](images/baluardo-api.jpg)
 
-Go API for **Vastion** — a fictional station watchdesk that fuses ship and outpost sensors into a human-in-the-loop triage queue.
+Go API for **Baluardo** (Italian for *bulwark*) — a hosted watchdesk game. You are the duty officer. Sites and sensors across a delayed fleet feed an imperfect picture; operators triage detections and push decisions back to the edge. Latency, confidence, and the cost of being wrong are the gameplay.
+
+The Vue client lives in the sibling [`vastion`](https://github.com/zanuka/vastion) repo.
 
 ## Product vision
 
-A nod to how Star Wars bridges and space stations fused many sensor and communication feeds — electro-photo receptors, full-spectrum and subspace transceivers, dedicated energy receptors, and more — into one place where skilled officers (and sorting droids) evaluated the flood of readings and decided what was important enough to pass to command. Conditioned alerts could wake reserve sensors for a closer look: power fluctuations, energy spikes behind stealth, anything that matched a warning profile.
+Most command games hide uncertainty. Baluardo makes it the gameplay.
 
-**Vastion** borrows that **shape** for a fictional fleet watchdesk that:
+You issue an Ack. The edge unit only receives it after a delay that stands in for light-minutes. In the meantime the Detection can shift confidence, move, or vanish. At the end of a scenario, a debrief shows what was real versus what you decided.
 
-1. **Integrates** sites and sensors across ships and outposts into one coherent picture  
-2. **Collates and prioritizes** detections so bridge crews are not drowning in raw feeds  
-3. **Triages with humans in the loop** — acknowledge, reject, or override before anything escalates further  
+This API is the **server of record** for that loop:
 
-Same job as the station console: fuse sensors → surface what matters → let people decide. Domain focus: detection → triage → human judgment.
+1. **Integrates** sites and sensors into one coherent (and always partial) picture
+2. **Collates and prioritizes** detections so the watch is not a raw feed
+3. **Triages with a human in the loop** — acknowledge, reject, or override before anything reaches the edge
+4. **Simulates latency** — commands travel; the world can change while they are in flight
+5. **Withholds ground truth** until debrief — scoring lives here, not in the client
+
+**First playable fantasy:** single-player scenario runner. Co-op shared picture comes after that loop is fun.
 
 ## Product metaphor
 
-A **Vastion** for operators:
-
-**sites → sensors → prioritized detections → acknowledge / override**
+**sites → sensors → live detections → acknowledge / reject / override → delayed edge receipt → debrief**
 
 | Entity | Role |
 | --- | --- |
-| **Site** | Location / area of operations |
-| **Sensor** | Source of detections |
-| **Detection** | Primary work item (severity, confidence, status) |
-| **Ack** | Operator action: acknowledge, reject / false-positive, override |
+| **Site** | Location / area of operations, with a latency profile |
+| **Sensor** | Source of detections; coverage and reliability |
+| **Detection** | Primary work item (severity, confidence, status, freshness). Truth is hidden until debrief. |
+| **Ack** | Player command: acknowledge, reject / false-positive, override |
+| **Scenario** | Layout, threat mix, duration, and latency profile for one watch |
+| **Session** | A running (or completed) play of a scenario |
+| **Debrief** | After-action: what was real, what you decided, what the delay cost |
 
-Status stays small: `open` → `acked` | `rejected`. Commands are idempotent; illegal transitions fail clearly.
+Status stays small: `open` → `acked` | `rejected`. Commands are idempotent; illegal transitions fail clearly (expect 409). That constraint is a game rule.
 
 ## This repo
 
-`vastion-api` is the **server of record** and the contract other systems consume. The first client is [`vastion`](https://github.com/zanuka/vastion), but the API is not Vue-specific.
+Module: `github.com/zanuka/baluardo-api`. This service owns persistence and the contracts other systems consume. The first client is [`vastion`](https://github.com/zanuka/baluardo), but the API is not Vue-specific.
 
 Clients and services may include:
 
-- Ops UIs (Vue today; others later)
+- The Baluardo SPA (Vue today; others later)
 - Automation / workers that list, filter, or act on detections
 - Integrations that read the graph or issue command-style mutations over HTTP
 
-Contracts are the source of truth — **OpenAPI (Huma REST)** for command mutations (ack, reject, assign) and **GraphQL (gqlgen)** for the read graph (detection → sensor → site, filters, rollups). Vue never talks to Mongo; only this API does.
+Contracts are the source of truth — **OpenAPI (Huma REST)** for commands (ack, reject, start/end session), a **WebSocket observation plane** for the live watch (G1 may poll REST as a bridge), and **GraphQL (gqlgen)** later for the read graph (scenario layout, nested debrief, filters, rollups). Vue never talks to Mongo; only this API does. Vue never authors detections; the feed generator lives here.
 
 ## North star
 
-Ship a thin vertical slice early: detections list → detail → ack, with honest async and error states. Then layer authz, GraphQL, indexes/aggregation, and HITL UX. Every surface should answer: *why this tool, what state lives where, what the operator can do next.*
+Ship a playable watch early: start a scenario → live detections → ack / reject under delay → debrief that shows truth vs decisions. Then layer the event stream, co-op rooms, content, and hosting.
 
 ```
-Client need → contract (REST command or GraphQL graph) → Go handler/resolver → Mongo → typed client → UI / service states
+Client need → contract (REST command, WS event, or GraphQL read)
+           → Go handler / stream / resolver → Mongo → typed client → UI / service states
 ```
+
+Every surface should answer: *why this tool, what the player can know now, what is still in flight to the edge.*
 
 ## Why this stack
 
-Vastion is deliberately the same shape as a real watchdesk, at a smaller scale: sites and sensors feed a shared picture; operators triage detections with a clear status machine; the Vue client never talks to Mongo; this Go API owns the contracts and the persistence.
+Baluardo is deliberately the same shape as a real watchdesk, at a smaller scale: sites and sensors feed a shared picture; operators triage detections with a clear status machine; the Vue client never talks to Mongo; this Go API owns the contracts, the persistence, and the delayed edge.
 
 ### Why Go
 
@@ -62,27 +72,27 @@ The decision loop stays close to the sensors and operators instead of shipping e
 A watchdesk or perception node must ingest concurrent sensor streams, run inference side-effects, handle partial network partitions, and still respond to operator commands. Go’s CSP model makes that tractable without the thread explosion or callback hell of other languages.
 
 - **Performance and footprint.** Low memory, fast startup, predictable latency. Edge devices and forward-deployed kits do not have the headroom of a cloud region.
-- **Networking and API ergonomics.** The standard library plus mature frameworks — Huma for REST/OpenAPI, gqlgen for GraphQL — give clean contracts that can stay a phase ahead of the Vue client. Go is also heavily used in security tooling and mesh/networking code for the same reasons.
-- **Operational simplicity under contested links.** You can run the service locally, buffer state, and reconcile when the link returns. No heavy framework magic that assumes always-on connectivity.
+- **Networking and API ergonomics.** The standard library plus mature frameworks — Huma for REST/OpenAPI, gqlgen for GraphQL — give clean contracts that can stay a phase ahead of the Vue client. A session-scoped generator and WebSocket hub fit the same process.
+- **Operational simplicity under contested links.** You can run the service locally, buffer state, and reconcile when the link returns. Latency simulation is a first-class mechanic, not a bug.
 
 ### Why MongoDB
 
 Sensor and detection data is heterogeneous and mission-shaped, not relational-table-shaped.
 
-- **Flexible document model.** A Detection can carry severity, confidence, a status machine (`open` → `acked` | `rejected`), nested history of operator overrides, model provenance, geospatial context, and arbitrary sensor-specific payloads without constant schema migrations. That matches how real multi-source feeds arrive (imagery metadata + FMV tracks + model scores).
+- **Flexible document model.** A Detection can carry severity, confidence, a status machine (`open` → `acked` | `rejected`), nested history of operator overrides, model provenance, geospatial context, and arbitrary sensor-specific payloads without constant schema migrations.
 - **Write-heavy, append-friendly workloads.** Sites and sensors continuously emit detections; operators triage them. Mongo handles high ingest rates and secondary indexes on the fields that matter for the shared picture (status, severity, site, time, confidence).
-- **Edge-friendly deployment.** A local Mongo (or compatible store) on the node can keep a working set of open detections and recent models, then sync/reconcile when connectivity allows. Document-oriented storage maps cleanly to the “what was seen, how sure we are, who owns the next move” shared-awareness model.
-- **Natural fit with Go.** The official driver and BSON are straightforward. API contracts (OpenAPI + GraphQL schema) stay the source of truth while the storage layer remains flexible.
+- **Scenarios and sessions.** Scenario definitions, running watches, and debrief snapshots sit next to the queue without a second store.
+- **Natural fit with Go.** The official driver and BSON are straightforward. API contracts stay the source of truth while the storage layer remains flexible.
 
 Relational systems force rigid tables or endless JSON columns when the shape of a Detection or an Ack changes with the mission. Mongo lets the domain model stay honest.
 
 ### Why Vue 3
 
-Operators need a reactive, low-friction SPA for triage: a shared picture of sites, sensors, and detections; confidence visualization; ack / reject / override actions that must be idempotent and survive delayed links. Vue 3 + Composition API + a design system is a strong fit for that UX surface. The client lives in [`vastion`](https://github.com/zanuka/vastion); this API stays client-agnostic.
+Operators need a reactive, low-friction SPA for triage: a shared picture of sites, sensors, and detections; a canvas situation map; ack / reject / override actions that must be idempotent and survive delayed links. Vue 3 + Composition API is a strong fit for that UX surface. The client lives in [`vastion`](https://github.com/zanuka/vastion); this API stays client-agnostic.
 
 ### Mapping back to the vision
 
-Vastion is the same loop at a smaller scale. Working through the two-repo boundary, Huma/gqlgen, the status machine (including proper 409s on illegal transitions), and the edge-resilient patterns is the work real perception-and-command platforms do — fuse sensors, surface what matters, let people decide when the link is contested.
+Baluardo is the same loop at a smaller scale. Working through the two-repo boundary, Huma/gqlgen, the status machine (including proper 409s on illegal transitions), and delayed edge receipts is the work real perception-and-command platforms do — fuse sensors, surface what matters, let people decide when the link is contested.
 
 ## Local development
 
@@ -127,7 +137,7 @@ Send stub identity headers on `/api/v1` routes: `X-Operator-Role: analyst|superv
 
 Env: `DATABASE_URL` (required), `PORT` (default `8080`), `CORS_ORIGINS` (comma-separated; default `http://localhost:5173`). Later, Fly can set the same `DATABASE_URL` with `fly secrets set`.
 
-Layering: `domain` → `repository/mongodb` → `service` → `handler`. GraphQL (gqlgen) is a later phase.
+Layering: `domain` → `repository/mongodb` → `service` → `handler`. GraphQL (gqlgen) is a later phase. Scenario, session, debrief, and the observation stream land on the game track before the Vue screens that consume them.
 
 ### Make targets
 

@@ -10,8 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/zanuka/vastion-api/internal/router"
-	"github.com/zanuka/vastion-api/internal/service"
+	"github.com/zanuka/baluardo-api/internal/router"
+	"github.com/zanuka/baluardo-api/internal/service"
 )
 
 type stubPinger struct {

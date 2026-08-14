@@ -1,6 +1,6 @@
-# vastion-api
+# baluardo-api
 
-Module: `github.com/zanuka/vastion-api`
+Module: `github.com/zanuka/baluardo-api`
 
 ## Layers
 

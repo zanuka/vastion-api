@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Decisions that shape `vastion-api`. Each record is **Accepted** unless noted. Update this file when a decision changes or a new one lands.
+Decisions that shape `baluardo-api`. Each record is **Accepted** unless noted. Update this file when a decision changes or a new one lands.
 
 **Status of the codebase:** Phase 2 — REST vertical slice (`/api/v1` detections list/detail/ack/reject and sites list). GraphQL is later.
 
