@@ -80,7 +80,7 @@ func (r *SensorRepository) ListBySiteID(ctx context.Context, siteID string) ([]d
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	var docs []sensorDoc
 	if err := cur.All(ctx, &docs); err != nil {

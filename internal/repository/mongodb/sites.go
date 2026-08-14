@@ -86,7 +86,7 @@ func (r *SiteRepository) List(ctx context.Context) ([]domain.Site, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	var docs []siteDoc
 	if err := cur.All(ctx, &docs); err != nil {

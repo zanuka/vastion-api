@@ -102,7 +102,7 @@ func (r *DetectionRepository) List(ctx context.Context, filter domain.DetectionL
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	var docs []detectionDoc
 	if err := cur.All(ctx, &docs); err != nil {

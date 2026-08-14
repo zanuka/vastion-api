@@ -98,7 +98,7 @@ func (r *AcknowledgementRepository) ListByDetectionID(ctx context.Context, detec
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	var docs []acknowledgementDoc
 	if err := cur.All(ctx, &docs); err != nil {
