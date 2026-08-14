@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/zanuka/vastion-api/internal/service"
+	"github.com/zanuka/baluardo-api/internal/service"
 )
 
 type Sites struct {

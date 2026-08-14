@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/zanuka/vastion-api/internal/domain"
-	"github.com/zanuka/vastion-api/internal/service"
+	"github.com/zanuka/baluardo-api/internal/domain"
+	"github.com/zanuka/baluardo-api/internal/service"
 )
 
 type Detections struct {

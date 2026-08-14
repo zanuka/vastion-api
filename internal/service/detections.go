@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zanuka/vastion-api/internal/domain"
+	"github.com/zanuka/baluardo-api/internal/domain"
 )
 
 const defaultListLimit = 50

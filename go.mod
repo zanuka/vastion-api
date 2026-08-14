@@ -1,4 +1,4 @@
-module github.com/zanuka/vastion-api
+module github.com/zanuka/baluardo-api
 
 go 1.24.0
 

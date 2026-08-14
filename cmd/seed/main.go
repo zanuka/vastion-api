@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/zanuka/vastion-api/internal/config"
-	"github.com/zanuka/vastion-api/internal/domain"
-	"github.com/zanuka/vastion-api/internal/repository/mongodb"
+	"github.com/zanuka/baluardo-api/internal/config"
+	"github.com/zanuka/baluardo-api/internal/domain"
+	"github.com/zanuka/baluardo-api/internal/repository/mongodb"
 )
 
 func main() {
