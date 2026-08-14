@@ -16,6 +16,8 @@ import (
 
 type Deps struct {
 	Health      *service.Health
+	Detections  *service.Detections
+	Sites       *service.Sites
 	CORSOrigins []string
 	Logger      *slog.Logger
 }
@@ -36,5 +38,11 @@ func New(deps Deps) http.Handler {
 
 	api := humachi.New(mux, huma.DefaultConfig("vastion-api", "0.1.0"))
 	handler.NewHealth(deps.Health).Register(api)
+	if deps.Detections != nil {
+		handler.NewDetections(deps.Detections).Register(api)
+	}
+	if deps.Sites != nil {
+		handler.NewSites(deps.Sites).Register(api)
+	}
 	return mux
 }

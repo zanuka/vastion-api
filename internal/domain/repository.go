@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type SiteRepository interface {
 	Insert(ctx context.Context, site *Site) error
@@ -19,6 +22,7 @@ type DetectionRepository interface {
 	Insert(ctx context.Context, detection *Detection) error
 	GetByID(ctx context.Context, id string) (*Detection, error)
 	List(ctx context.Context, filter DetectionListFilter) ([]Detection, error)
+	UpdateStatus(ctx context.Context, id string, from, to DetectionStatus, at time.Time) (*Detection, error)
 }
 
 type AcknowledgementRepository interface {

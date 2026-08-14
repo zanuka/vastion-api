@@ -117,6 +117,13 @@ go run ./cmd/api
 - `GET /healthz` — process is up
 - `GET /readyz` — Mongo ping
 - `/openapi.json` and `/docs` — Huma OpenAPI
+- `GET /api/v1/sites` — thin site list for the switcher (`id`, `name`, `code`)
+- `GET /api/v1/detections` — queue with `site`, `severity`, `status` filters and a keyset `cursor`
+- `GET /api/v1/detections/{id}` — detection detail
+- `POST /api/v1/detections/{id}/ack` — idempotent **200** with the updated detection; **409** on an illegal transition (for example `rejected` → `acked`)
+- `POST /api/v1/detections/{id}/reject` — `{"reason":"..."}` required (**400** if missing); same 200 / 409 rules as ack
+
+Send stub identity headers on `/api/v1` routes: `X-Operator-Role: analyst|supervisor` and `X-Operator-Name`. Missing role is **401**; an unknown role is **403**. Vue should set `VITE_API_URL=http://localhost:8080`.
 
 Env: `DATABASE_URL` (required), `PORT` (default `8080`), `CORS_ORIGINS` (comma-separated; default `http://localhost:5173`). Later, Fly can set the same `DATABASE_URL` with `fly secrets set`.
 
@@ -131,6 +138,7 @@ Layering: `domain` → `repository/mongodb` → `service` → `handler`. GraphQL
 | `make compose-up` | Start Mongo via Docker Compose |
 | `make build` | Compile all packages |
 | `make test` | Run `go test ./...` |
+| `make test-integration` | Run tests including the Compose Mongo ack path (`DATABASE_URL` required) |
 | `make lint` | Run `golangci-lint run` |
 | `make check` | Build, test, and lint (same gates as CI and the pre-push hook) |
 | `make hooks` | Install `.git/hooks/pre-push` (also happens on any `make` target) |

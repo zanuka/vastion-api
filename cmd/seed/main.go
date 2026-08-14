@@ -85,52 +85,70 @@ func seed(ctx context.Context, client *mongodb.Client) error {
 	}
 
 	openCritical := &domain.Detection{
-		SiteID:     alpha.ID,
-		SensorID:   rf.ID,
-		Status:     domain.DetectionStatusOpen,
-		Severity:   domain.DetectionSeverityCritical,
-		Summary:    "Anomalous RF burst near perimeter fence",
-		DetectedAt: ago(4),
+		SiteID:      alpha.ID,
+		SensorID:    rf.ID,
+		Status:      domain.DetectionStatusOpen,
+		Severity:    domain.DetectionSeverityCritical,
+		Confidence:  0.94,
+		Summary:     "Anomalous RF burst near perimeter fence",
+		DetectedAt:  ago(4),
+		LastUpdated: ago(2),
+		Provenance:  provenance(rf, "watchdesk-rf", "2.1.0"),
 	}
 	openHigh := &domain.Detection{
-		SiteID:     alpha.ID,
-		SensorID:   aq.ID,
-		Status:     domain.DetectionStatusOpen,
-		Severity:   domain.DetectionSeverityHigh,
-		Summary:    "Elevated particulate reading — sector 3",
-		DetectedAt: ago(18),
+		SiteID:      alpha.ID,
+		SensorID:    aq.ID,
+		Status:      domain.DetectionStatusOpen,
+		Severity:    domain.DetectionSeverityHigh,
+		Confidence:  0.81,
+		Summary:     "Elevated particulate reading — sector 3",
+		DetectedAt:  ago(18),
+		LastUpdated: ago(12),
+		Provenance:  provenance(aq, "watchdesk-aq", "1.4.2"),
 	}
 	openMedium := &domain.Detection{
-		SiteID:     beta.ID,
-		SensorID:   thermal.ID,
-		Status:     domain.DetectionStatusOpen,
-		Severity:   domain.DetectionSeverityMedium,
-		Summary:    "Motion cluster detected in restricted zone",
-		DetectedAt: ago(35),
+		SiteID:      beta.ID,
+		SensorID:    thermal.ID,
+		Status:      domain.DetectionStatusOpen,
+		Severity:    domain.DetectionSeverityMedium,
+		Confidence:  0.67,
+		Summary:     "Motion cluster detected in restricted zone",
+		DetectedAt:  ago(35),
+		LastUpdated: ago(30),
+		Provenance:  provenance(thermal, "watchdesk-thermal", "3.0.1"),
 	}
 	ackedLow := &domain.Detection{
-		SiteID:     beta.ID,
-		SensorID:   acoustic.ID,
-		Status:     domain.DetectionStatusAcked,
-		Severity:   domain.DetectionSeverityLow,
-		Summary:    "Routine acoustic signature — logged",
-		DetectedAt: ago(90),
+		SiteID:      beta.ID,
+		SensorID:    acoustic.ID,
+		Status:      domain.DetectionStatusAcked,
+		Severity:    domain.DetectionSeverityLow,
+		Confidence:  0.52,
+		Summary:     "Routine acoustic signature — logged",
+		DetectedAt:  ago(90),
+		LastUpdated: ago(45),
+		Provenance:  provenance(acoustic, "watchdesk-acoustic", "1.0.0"),
 	}
 	openHighGamma := &domain.Detection{
-		SiteID:     gamma.ID,
-		SensorID:   relay.ID,
-		Status:     domain.DetectionStatusOpen,
-		Severity:   domain.DetectionSeverityHigh,
-		Summary:    "Link degradation on relay uplink",
-		DetectedAt: ago(8),
+		SiteID:      gamma.ID,
+		SensorID:    relay.ID,
+		Status:      domain.DetectionStatusOpen,
+		Severity:    domain.DetectionSeverityHigh,
+		Confidence:  0.88,
+		Summary:     "Link degradation on relay uplink",
+		DetectedAt:  ago(8),
+		LastUpdated: ago(5),
+		Provenance:  provenance(relay, "watchdesk-net", "2.2.0"),
 	}
 	rejectedMedium := &domain.Detection{
-		SiteID:     gamma.ID,
-		SensorID:   radar.ID,
-		Status:     domain.DetectionStatusRejected,
-		Severity:   domain.DetectionSeverityMedium,
-		Summary:    "False positive — weather interference",
-		DetectedAt: ago(120),
+		SiteID:      gamma.ID,
+		SensorID:    radar.ID,
+		Status:      domain.DetectionStatusRejected,
+		Severity:    domain.DetectionSeverityMedium,
+		Confidence:  0.41,
+		Summary:     "False positive — weather interference",
+		DetectedAt:  ago(120),
+		LastUpdated: ago(60),
+		Provenance:  provenance(radar, "watchdesk-radar", "1.8.0"),
 	}
 
 	queue := []*domain.Detection{openCritical, openHigh, openMedium, ackedLow, openHighGamma, rejectedMedium}
@@ -169,4 +187,13 @@ func seed(ctx context.Context, client *mongodb.Client) error {
 		"acknowledgements", 2,
 	)
 	return nil
+}
+
+func provenance(sensor *domain.Sensor, model, version string) domain.Provenance {
+	return domain.Provenance{
+		SensorID:     sensor.ID,
+		SensorName:   sensor.Name,
+		Model:        model,
+		ModelVersion: version,
+	}
 }

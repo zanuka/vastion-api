@@ -10,3 +10,6 @@ docs/dev/
 *.swp
 .idea/
 .vscode/
+
+# nocciolo
+.nocciolo/

@@ -19,14 +19,29 @@ const (
 	DetectionSeverityLow      DetectionSeverity = "low"
 )
 
+type Provenance struct {
+	SensorID     string
+	SensorName   string
+	Model        string
+	ModelVersion string
+}
+
 type Detection struct {
-	ID         string
-	SiteID     string
-	SensorID   string
-	Status     DetectionStatus
-	Severity   DetectionSeverity
-	Summary    string
+	ID          string
+	SiteID      string
+	SensorID    string
+	Status      DetectionStatus
+	Severity    DetectionSeverity
+	Confidence  float64
+	Summary     string
+	DetectedAt  time.Time
+	LastUpdated time.Time
+	Provenance  Provenance
+}
+
+type KeysetCursor struct {
 	DetectedAt time.Time
+	ID         string
 }
 
 type DetectionListFilter struct {
@@ -34,4 +49,6 @@ type DetectionListFilter struct {
 	SensorID string
 	Status   DetectionStatus
 	Severity DetectionSeverity
+	Limit    int
+	Cursor   *KeysetCursor
 }
