@@ -2,7 +2,7 @@
 
 Decisions that shape `vastion-api`. Each record is **Accepted** unless noted. Update this file when a decision changes or a new one lands.
 
-**Status of the codebase:** Phase 0 bootstrap — health endpoints, Mongo connectivity, OpenAPI shell, layered packages, env config. Domain CRUD and GraphQL are planned; decisions below already constrain how they land.
+**Status of the codebase:** Phase 1 — domain entities, repository interfaces, Mongo collections and indexes, seed data. REST detections CRUD is Phase 2. GraphQL is later.
 
 ---
 
@@ -152,7 +152,7 @@ Local Mongo is provided by `docker-compose.yml` (`mongo:7`, named volume, databa
 
 ## ADR-006 — Domain IDs and status model
 
-**Status:** Accepted (entities partially stubbed)
+**Status:** Accepted
 
 **Context:** Embedding Mongo types in domain structs couples every layer to the driver and complicates GraphQL/DTO mapping.
 
@@ -160,10 +160,13 @@ Local Mongo is provided by `docker-compose.yml` (`mongo:7`, named volume, databa
 
 ```go
 type Detection struct {
-	ID       string
-	SiteID   string
-	SensorID string
-	Status   DetectionStatus
+	ID         string
+	SiteID     string
+	SensorID   string
+	Status     DetectionStatus
+	Severity   DetectionSeverity
+	Summary    string
+	DetectedAt time.Time
 }
 ```
 
@@ -172,7 +175,7 @@ Ack/reject (when implemented): idempotent success returns **200** with the same 
 **Consequences:**
 
 - Repository interfaces live in `domain`; Mongo implementations live under `repository/mongodb`.
-- Acknowledgements are modeled as their own entity/collection later — not an unbounded array on the detection document.
+- Acknowledgements are a separate collection — not an unbounded array on the detection document. See [`data-model.md`](./data-model.md).
 
 ---
 
@@ -259,23 +262,24 @@ Phase 0 example: `internal/handler/health_test.go` stubs `Pinger` and asserts `/
 
 ## ADR-011 — Mongo data model direction
 
-**Status:** Accepted (implementation pending)
+**Status:** Accepted
 
 **Context:** The primary operator query is “open detections for a site, newest first.” Unbounded nested ack history on the detection document would grow without bound and complicate updates.
 
-**Decision (target model):**
+**Decision:**
 
 | Collection | Pattern |
 | --- | --- |
 | `sites`, `sensors` | Referenced documents with independent lifecycles |
-| `detections` | Primary work item; indexes aligned to the open-queue query |
-| `acknowledgements` | Separate audit collection keyed by detection |
+| `detections` | Primary work item; compound index `siteId + status + detectedAt` desc |
+| `acknowledgements` | Separate audit collection keyed by `detectionId + createdAt` desc |
 
 List pagination will use **keyset** cursors on `(detectedAt, id)`, not `skip`/`limit`.
 
 **Consequences:**
 
-- Indexes are ensured at startup once repositories exist (idempotent).
+- Indexes are ensured at startup (`EnsureIndexes`, idempotent).
+- Rationale for embed vs reference and the separate acks collection: [`data-model.md`](./data-model.md).
 - Mongo JSON Schema validation, Redis, change streams, and multi-doc transactions are out of scope for v1 unless explicitly adopted later.
 
 ---
@@ -303,10 +307,11 @@ List pagination will use **keyset** cursors on `(detectedAt, id)`, not `skip`/`l
 | Path | Role |
 | --- | --- |
 | `cmd/api` | Process entry |
-| `cmd/seed` | Seed stub |
+| `cmd/seed` | Demo queue fixture |
 | `internal/config` | Env loading |
 | `internal/domain` | Entities + repository interfaces |
-| `internal/repository/mongodb` | Connect / ping / disconnect |
+| `internal/repository/mongodb` | Driver, BSON mapping, indexes, CRUD |
+| `docs/data-model.md` | Embed vs reference; ack collection; indexes |
 | `internal/service` | Use cases (health today) |
 | `internal/handler` | Huma REST |
 | `internal/middleware` | Request logging |
@@ -320,4 +325,5 @@ List pagination will use **keyset** cursors on `(detectedAt, id)`, not `skip`/`l
 ## Related
 
 - Product overview and local run: [`README.md`](../README.md)
+- Collections and indexes: [`data-model.md`](./data-model.md)
 - Agent/contributor layering summary: [`AGENTS.md`](../AGENTS.md)

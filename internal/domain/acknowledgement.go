@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type AckAction string
 
 const (
@@ -12,4 +14,9 @@ type Acknowledgement struct {
 	ID          string
 	DetectionID string
 	Action      AckAction
+	Reason      string
+	Operator    string
+	FromStatus  DetectionStatus
+	ToStatus    DetectionStatus
+	CreatedAt   time.Time
 }
