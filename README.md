@@ -208,8 +208,8 @@ After that, `git push` runs `make check` so the branch compiles, tests pass, and
 
 ## Author
 
-Created by [zanuka](https://github.com/zanuka) (Michael Delucchi)
+Created by [zanuka](https://github.com/zanuka) (Mike Delucchi)
 
 ## License
 
-Copyright © 2026 Michael Delucchi. Released under the [MIT License](LICENSE).
+Copyright © 2026 Mike Delucchi. Released under the [MIT License](LICENSE).
